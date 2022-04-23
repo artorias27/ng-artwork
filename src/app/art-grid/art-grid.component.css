@@ -1,0 +1,16 @@
+/* .img {
+    width: 100%;
+    min-height: 150px;
+    overflow: hidden;
+} */
+
+nx-card {
+    height: 480px;
+    width: 100%;
+    overflow: hidden;
+    display: table-cell;
+}
+img {
+    width: 100%; /* or any custom size */
+    height: 250px;
+}
