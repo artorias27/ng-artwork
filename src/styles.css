@@ -3,7 +3,6 @@
 @import "@angular/cdk/overlay-prebuilt.css";
 @import "@angular/cdk/a11y-prebuilt.css";
 
-/* body {
-    text-align: center;
-    margin: 0 auto;
-} */
+body {
+    box-sizing: border-box;
+}

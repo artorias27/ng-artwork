@@ -1,27 +1,16 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { FetchData } from 'src/services/fetch-data';
-import { Pager } from './pagination/pagination.component';
+import { IDropdownSettings } from 'ng-multiselect-dropdown';
+import { SpinnerService } from 'src/services/spinner.service';
 
-// export class Artwork {
-    
-//     id!: number; 
-//     title!: string; 
-//     date_start!: number; 
-//     date_end!: number;
-//     style_title!: string; 
-//     material_titles!: [];
-//     image_id!: string;
-//     artist_title!: string;
-// }
 export interface Artwork {
-    
-    id: number; 
-    title: string; 
-    date_start: number; 
+    id: number;
+    title: string;
+    date_start: number;
     date_end: number;
-    style_title: string; 
+    style_title: string;
     material_titles: [];
+    style_titles: [];
     image_id: string;
     artist_title: string;
     place_of_origin: string;
@@ -29,65 +18,112 @@ export interface Artwork {
 @Component({
     selector: 'app-root',
     templateUrl: './app.component.html',
+    styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit {
-    formGroup: FormGroup;
-
-    // page: number = 1;
-    // count: number = 210;
-    // perPage: number = 10;
-
     page: number = 1;
     count!: number;
     perPage!: number;
-    collection: Artwork[] = [];
-    spin: boolean = false;
+    collection: any[] = [];
 
-    constructor(private data: FetchData) {
-        this.formGroup = new FormBuilder().group({
-            name: ['', Validators.required],
-            items: ['', Validators.required],
-            email: ['', [Validators.email, Validators.required]],
-            consent: [false, Validators.requiredTrue],
-        });
+    selectOptions: any[] = [];
+    dropdownList: any[] = [];
+    selectedItems: any[] = [];
+    dropdownSettings: IDropdownSettings = {};
+
+    constructor(private data: FetchData, public spinner: SpinnerService) {
+        this.selectedItems = [];
+        this.dropdownSettings = {
+            singleSelection: false,
+            idField: 'value',
+            textField: 'label',
+            selectAllText: 'Select All',
+            unSelectAllText: 'UnSelect All',
+            itemsShowLimit: 3,
+            allowSearchFilter: false,
+            enableCheckAll: false
+        };
     }
 
     ngOnInit() {
-        this.spin = true;
         this.data.getCollection(this.page).subscribe(item => {
             console.log(item);
             this.count = item.pagination.total;
             this.perPage = item.pagination.limit;
             this.collection = item.data;
-            console.log('collection ', this.collection);
-            this.spin = this.collection ? false : true;
+            this.selectOptions = this.getOptions(this.collection);
+            console.log('options ', this.selectOptions);
         })
     }
 
-    // prevPage() {
-    //     this.page--;
-    // }
+    getOptions(options: any[]) {
+        let arr; let modOptions: any[] = [];
+        let fetchedOptions: any[] = [];
+        // get all style_titles
+        options.forEach(styles => {
+            if (!!styles.style_titles) {
+                arr = [...styles.style_titles];
+                for (let i = 0; i < arr.length; i++) {
+                    fetchedOptions.push(arr[i]);
+                }
+            }
+        })
+        console.log('fetched ', fetchedOptions)
+        let count = 1; let display;
+        for (let i = 0; i < fetchedOptions.length; i++) {
+            for (let j = i; j < fetchedOptions.length; j++) {
+                // avoid self compare
+                if (i !== j) {
+                    if (fetchedOptions[i] === fetchedOptions[j]) {
+                        count++;
+                        display = `${fetchedOptions[i]} (${count})`;
+                        modOptions.push({ value: fetchedOptions[i], label: display });
+                    }
+                    else {
+                        display = `${fetchedOptions[i]} (${count})`;
+                        modOptions.push({ value: fetchedOptions[i], label: display })
+                    }
+                }
+            }
+        }
+        // transform to expected options[]
+        let vals = modOptions.map(i => i.value);
+        let filteredOptions = modOptions.filter(({ value }, index) => !vals.includes(value, index + 1));
+        console.log('modOptions ', modOptions)
+        return filteredOptions
+    }
 
-    // nextPage() {
-    //     this.page++;
-    // }
+    onItemSelect(item: any) {
+        console.log(item);
+        console.log(this.selectedItems);
+        let result = [...this.collection];
+        if (!!this.selectedItems) {
+            this.collection = this.collection.filter(art => {
+                return art.style_title === this.selectedItems[0].value
+            })
+        } else {
+            this.collection = [...result];
+        }
+    }
 
-    // goToPage(n: pager) {
-    //     this.page = n;
-    //     console.log(n);
-    //     this.data.getCollection(n).subscribe(item => {
-    //         console.log(item);
-    //         this.count = item.pagination.total;
-    //         this.perPage = item.pagination.limit;
-    //         this.collection = item.data;
-    //     })
-    // }
+    prevPage() {
+        this.page--;
+    }
 
-    goToPage(nextPager: any) {
-        this.spin = true;
-        this.collection = nextPager.data;
-        this.spin = this.collection ? false : true;
-        console.log('next page ', this.collection)
+    nextPage() {
+        this.page++;
+    }
+
+    goToPage(n: number) {
+        // get data and modoptions from other page
+        this.page = n;       
+        this.data.getCollection(n).subscribe(item => {
+            console.log(item);
+            this.count = item.pagination.total;
+            this.perPage = item.pagination.limit;
+            this.collection = item.data;
+            this.selectOptions = this.getOptions(this.collection);
+        })
     }
 }
 
