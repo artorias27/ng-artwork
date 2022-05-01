@@ -13,7 +13,7 @@ export class FetchData {
     constructor(private http: HttpClient) { }
 
     getCollection(page: number) {
-        return this.http.get<any>(`https://api.artic.edu/api/v1/artworks?page=${page}&limit=8`).pipe(
+        return this.http.get<any>(`https://api.artic.edu/api/v1/artworks?page=${page}&limit=12`).pipe(
             map(res => {
                 return {
                     pagination: res.pagination,
