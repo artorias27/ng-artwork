@@ -1,9 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FetchData } from 'src/services/fetch-data';
-import { IDropdownSettings } from 'ng-multiselect-dropdown';
 import { SpinnerService } from 'src/services/spinner.service';
-import { map } from 'rxjs/operators'
-import { Observable, of } from 'rxjs';
 
 export interface Artwork {
     id: number;
@@ -30,22 +27,10 @@ export class AppComponent implements OnInit {
     collection: Artwork[] = [];
 
     selectOptions: any[] = [];
-    dropdownList: any[] = [];
     selectedItems: any[] = [];
-    dropdownSettings: IDropdownSettings = {};
+    copyCollection!: any[];
 
     constructor(private data: FetchData, public spinner: SpinnerService) {
-        this.selectedItems = [];
-        this.dropdownSettings = {
-            singleSelection: false,
-            idField: 'value',
-            textField: 'label',
-            selectAllText: 'Select All',
-            unSelectAllText: 'UnSelect All',
-            itemsShowLimit: 3,
-            allowSearchFilter: false,
-            enableCheckAll: false
-        };
     }
 
     ngOnInit() {
@@ -54,18 +39,16 @@ export class AppComponent implements OnInit {
             this.count = item.pagination.total;
             this.perPage = item.pagination.limit;
             // get Artwork data
-            this.getArtWorks(item.data).subscribe(arts => {
-                this.collection = arts;
-                console.log('Arts', this.collection)
-                this.selectOptions = this.getOptions(this.collection);
-            })
+            this.collection = this.mapArtWorks(item.data);
+            this.copyCollection = [...this.collection];
+            this.selectOptions = this.getOptions(this.collection);
             // console.log('options ', this.selectOptions);
         })
     }
+
     // get Specific Fields 
-    getArtWorks(artworks: any[]): Observable<Artwork[]> {
-        let data$ = of(artworks); // Make observable array
-        return data$.pipe(map((artworks: any[]) => artworks.map(artwork => ({
+    mapArtWorks(artworks: any[]): Artwork[] {
+        return artworks.map(artwork => ({
             id: artwork.id,
             title: artwork.title,
             date_start: artwork.date_start,
@@ -77,12 +60,12 @@ export class AppComponent implements OnInit {
             image_id: artwork.image_id,
             artist_title: artwork.artist_title,
             place_of_origin: artwork.place_of_origin
-        }))));
+        }))
     }
 
     getOptions(options: any[]) {
         let arr; let modOptions: any[] = [];
-        let fetchedOptions: any[] = []; let temp: any = {};
+        let fetchedOptions: any[] = []; let dupli_Obj: any = {};
         let categories; let counts;
         // put all category_titles into One array
         options.forEach(styles => {
@@ -94,41 +77,42 @@ export class AppComponent implements OnInit {
             }
         })
         console.log('fetched ', fetchedOptions)
-        fetchedOptions.forEach(ele => {
-            temp[ele] = (temp[ele] || 0) + 1
+        fetchedOptions.forEach(ele => {     
+            dupli_Obj[ele] = (dupli_Obj[ele] || 0) + 1;     // { 'pen': 2, 'pencil': 3, 'painting': 1 }
         })
-        console.log('temp',temp);
-        categories = Object.keys(temp);
-        counts = Object.values(temp);
-        for(let i = 0; i < categories.length; i++) { // push into array with desired fields
+        // let obj = fetchedOptions.reduce((total, value) => {
+        //     return { ...total, [value]: ([value] || 0 + 1) }
+        // }, {})
+        console.log('temp', dupli_Obj);
+        categories = Object.keys(dupli_Obj);
+        counts = Object.values(dupli_Obj);
+        for (let i = 0; i < categories.length; i++) { // push into array with desired fields
             modOptions.push({ value: categories[i], label: `${categories[i]} (${counts[i]})` });
-        } 
-        // transform to expected options[]
-        // let vals = modOptions.map(i => i.value);
-        // let filteredOptions = modOptions.filter(({ value }, index) => !vals.includes(value, index + 1));
+        }
         console.log('modOptions ', modOptions)
         return modOptions
     }
 
-    onItemSelect(item: any) {
-        console.log(item);
-        console.log(this.selectedItems);
-        let result = [...this.collection];
-        if (!!this.selectedItems) {
-            this.collection = this.collection.filter(art => {
-                return art.style_title === this.selectedItems[0].value
+    onSelection(e: any) {
+        this.collection = [...this.copyCollection];
+        this.collection = this.collection.filter(artwork => {
+            return e.some((ele: string, i: number, arr: []) => {
+                return artwork.category_titles.includes(arr[i])
             })
-        } else {
-            this.collection = [...result];
-        }
+        })
+        // if nothing is selected, Repopulate the array with original data
+        if(this.collection.length === 0) this.collection = [...this.copyCollection]
+        console.log('mult ', this.collection)
     }
 
     prevPage() {
         this.page--;
+        this.goToPage(this.page)
     }
 
     nextPage() {
         this.page++;
+        this.goToPage(this.page)
     }
 
     goToPage(n: number) {
@@ -138,7 +122,8 @@ export class AppComponent implements OnInit {
             console.log(item);
             this.count = item.pagination.total;
             this.perPage = item.pagination.limit;
-            this.collection = item.data;
+            this.collection = this.mapArtWorks(item.data);
+            this.copyCollection = [...this.collection];
             this.selectOptions = this.getOptions(this.collection);
         })
     }
