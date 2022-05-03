@@ -1,4 +1,5 @@
 <h2 nxHeadline="section">Artwork Collection</h2>
+<<<<<<< HEAD
 <br />
 <div class="container">
   <div nxRow nxRowJustify="around">
@@ -80,3 +81,54 @@
   </div>
 </div>
 <br />
+=======
+<br>
+<div class="container">
+    <div nxRow nxRowJustify="start,start,around">
+        <div nxCol="4">
+            <h3 class="nx-margin-bottom-0">Disabled:</h3>
+            <ng-multiselect-dropdown [placeholder]="'Style'" [settings]="dropdownSettings" [data]="selectOptions"
+                [(ngModel)]="selectedItems" (onSelect)="onItemSelect($event)">
+            </ng-multiselect-dropdown>
+        </div>
+        <div nxCol="4">
+            <h3 class="nx-margin-bottom-0">Disabled:</h3>
+            <ng-multiselect-dropdown [placeholder]="'Style'" [settings]="dropdownSettings" [data]="selectOptions"
+                [(ngModel)]="selectedItems" (onSelect)="onItemSelect($event)">
+            </ng-multiselect-dropdown>
+        </div>
+    </div>
+</div>
+
+<div nxLayout="grid" class="docs-grid-colored-grid">
+    <div nxRow nxRowJustify="start,start,around">
+        <div class="spin-container" *ngIf="spinner.isLoading | async">
+            <nx-spinner nxSize="large" style="top: 50%; left: 50%"></nx-spinner>
+        </div>
+        <div nxCol="4,3" class="docs-grid-colored-col" *ngFor="let item of collection">
+            <nx-card class="nx-margin-bottom-2m">
+                <div class="img" *ngIf="item.image_id;else other_link">
+                    <img src="https://www.artic.edu/iiif/2/{{item.image_id}}/full/843,/0/default.jpg" />
+                </div>
+                <ng-template #other_link>
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/3/32/Art_Institute_of_Chicago_logo.svg" />
+                </ng-template>
+                <h3>{{item.title}}</h3>
+                <h4>{{item.artist_title}}</h4>
+                <p>{{item.place_of_origin}} ({{item.date_start}} - {{item.date_end}} )</p>
+            </nx-card>
+            <br>
+        </div>
+    </div>
+</div>
+<br>
+
+<div nxRow nxRowJustify="start,start,around">
+    <div nxCol="6">
+        <nx-pagination [nxCount]="count" nxType="advanced" [nxPage]="page" [nxPerPage]="perPage" (nxGoPrev)="prevPage()"
+            (nxGoNext)="nextPage()" (nxGoPage)="goToPage($event)">
+        </nx-pagination>
+    </div>
+</div>
+<br>
+>>>>>>> 9859556749fad89a466d3269f58a6cee9f4cc5f8
